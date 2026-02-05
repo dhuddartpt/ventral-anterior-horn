@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spinal Tract Simulation - Clinical Correlations</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h2 { margin-bottom: 10px; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        /* Layout Container */
+        .main-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Simulation Column */
+        .sim-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Info/Instructions Column */
+        .info-column {
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Clinical Instructions Box */
+        .clinical-box {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            border-left: 4px solid #ff3333; /* Red accent for pathology */
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .clinical-box h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 1.1em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .clinical-box ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        .clinical-box li {
+            margin-bottom: 20px; /* Increased spacing for readability */
+            line-height: 1.6;
+            font-size: 0.95em;
+            color: #ccc;
+        }
+
+        .highlight {
+            color: #fff;
+            font-weight: 600;
+            text-decoration: underline;
+            text-decoration-color: #ff3333;
+        }
+
+        /* Controls */
+        .controls {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        button:hover { background-color: #444; }
+        button.active { background-color: #1a4d1a; border-color: #00ff66; color: #00ff66; }
+        button.inactive { background-color: #333; color: #888; border-color: #444; }
+
+        /* Simulation Containers */
+        .container { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        .view-box { display: flex; flex-direction: column; align-items: center; }
+        
+        .legend { margin-bottom: 20px; font-size: 0.9em; background: #1e1e1e; padding: 10px; border-radius: 4px; border: 1px solid #333; }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+        .red { background-color: #ff3333; box-shadow: 0 0 5px #ff3333; }
+        .green { background-color: #00ff66; box-shadow: 0 0 5px #00ff66; }
+        .yellow { background-color: #ffff00; box-shadow: 0 0 5px #ffff00; }
+
+        /* --- VISUALIZATION STYLES --- */
+        .spinal-column {
+            position: relative;
+            width: 80px;
+            height: 400px;
+            background: linear-gradient(90deg, #333 0%, #444 20%, #2a2a2a 50%, #444 80%, #333 100%);
+            border-radius: 8px;
+            border: 1px solid #555;
+            overflow: visible; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .segment-line {
+            position: absolute; left: 0; width: 100%; height: 0;
+            border-top: 2px dashed rgba(0, 0, 0, 0.8); 
+            z-index: 1; pointer-events: none;
+        }
+
+        .signal-lateral {
+            position: absolute; width: 4px; height: 20px;
+            background: #ff3333; box-shadow: 0 0 8px #ff3333;
+            border-radius: 2px; opacity: 0; z-index: 2;
+        }
+        .lateral-left { left: 10px; animation: descend 2s linear infinite; }
+        .lateral-right { right: 10px; animation: descend 2s linear infinite 0.5s; }
+
+        .signal-posterior {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            width: 6px; height: 20px;
+            background: #00ff66; box-shadow: 0 0 8px #00ff66;
+            border-radius: 2px; opacity: 0; z-index: 2;
+            animation: ascend 2.5s linear infinite; transition: opacity 0.3s;
+        }
+
+        .nerve-root {
+            position: absolute; width: 10px; height: 4px;
+            background: #ffff00; box-shadow: 0 0 8px #ffff00;
+            border-radius: 2px; opacity: 0; z-index: 2;
+        }
+        .exit-1 { top: 40px; left: -10px; animation: exitLeft 2s ease-out infinite; }
+        .exit-2 { top: 120px; left: -10px; animation: exitLeft 2s ease-out infinite 0.4s; }
+        .exit-3 { top: 200px; left: -10px; animation: exitLeft 2s ease-out infinite 0.8s; }
+        .exit-4 { top: 280px; left: -10px; animation: exitLeft 2s ease-out infinite 1.2s; }
+        .exit-5 { top: 360px; left: -10px; animation: exitLeft 2s ease-out infinite 1.6s; }
+        .exit-1r { top: 40px; right: -10px; animation: exitRight 2s ease-out infinite; }
+        .exit-2r { top: 120px; right: -10px; animation: exitRight 2s ease-out infinite 0.4s; }
+        .exit-3r { top: 200px; right: -10px; animation: exitRight 2s ease-out infinite 0.8s; }
+        .exit-4r { top: 280px; right: -10px; animation: exitRight 2s ease-out infinite 1.2s; }
+        .exit-5r { top: 360px; right: -10px; animation: exitRight 2s ease-out infinite 1.6s; }
+
+        /* Cross Section */
+        .cross-section {
+            position: relative; width: 220px; height: 200px;
+            background: #2a2a2a; border-radius: 50% 50% 45% 45%; 
+            border: 2px solid #555; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            margin-top: 100px; display: flex; justify-content: center; align-items: center; overflow: visible;
+        }
+        .fissure {
+            position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+            width: 6px; height: 30px; background: #121212;
+            border-top-left-radius: 10px; border-top-right-radius: 10px; z-index: 5;
+        }
+        .septum {
+            position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
+            width: 2px; height: 30px; background: #111; z-index: 5;
+        }
+        .grey-matter-svg { position: absolute; width: 100%; height: 100%; z-index: 2; }
+
+        .cs-posterior {
+            position: absolute; top: 10px; width: 30px; height: 15px;
+            background: radial-gradient(circle, #00ff66 0%, transparent 70%);
+            opacity: 0; z-index: 3; animation: pulseGreen 1.5s ease-in-out infinite; transition: opacity 0.3s;
+        }
+        .cs-lateral-left {
+            position: absolute; top: 90px; left: 15px; width: 20px; height: 20px;
+            background: radial-gradient(circle, #ff3333 0%, transparent 70%);
+            opacity: 0; z-index: 3; animation: pulseRed 1.5s ease-in-out infinite;
+        }
+        .cs-lateral-right {
+            position: absolute; top: 90px; right: 15px; width: 20px; height: 20px;
+            background: radial-gradient(circle, #ff3333 0%, transparent 70%);
+            opacity: 0; z-index: 3; animation: pulseRed 1.5s ease-in-out infinite;
+        }
+        .cs-exit-root {
+            position: absolute; bottom: 25px; left: -22px; 
+            width: 60px; height: 6px; background: linear-gradient(90deg, #ffff00, transparent);
+            transform: rotate(40deg); transform-origin: right center;
+            animation: shootOut 1s ease-out infinite; z-index: 1;
+        }
+        .cs-exit-root-r {
+            position: absolute; bottom: 25px; right: -22px;
+            width: 60px; height: 6px; background: linear-gradient(-90deg, #ffff00, transparent);
+            transform: rotate(-40deg); transform-origin: left center;
+            animation: shootOutRight 1s ease-out infinite; z-index: 1;
+        }
+        .signal-off { display: none !important; animation: none !important; opacity: 0 !important; }
+
+        /* Animations Keyframes */
+        @keyframes descend { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        @keyframes ascend { 0% { top: 100%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 0; opacity: 0; } }
+        @keyframes exitLeft { 0% { transform: translateX(0) scaleX(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateX(-40px) scaleX(1); opacity: 0; } }
+        @keyframes exitRight { 0% { transform: translateX(0) scaleX(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateX(40px) scaleX(1); opacity: 0; } }
+        @keyframes pulseRed { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        @keyframes pulseGreen { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        @keyframes shootOut { 0% { width: 0; opacity: 1; left: 20px; } 100% { width: 70px; opacity: 0; left: -50px; } }
+        @keyframes shootOutRight { 0% { width: 0; opacity: 1; right: 20px; } 100% { width: 70px; opacity: 0; right: -50px; } }
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        
+        <div class="sim-column">
+            <div class="controls">
+                <button id="toggleGreen" class="active" onclick="toggleAfferent()">Afferent Signal: ON</button>
+            </div>
+
+            <div class="legend">
+                <div><span class="dot red"></span>Lateral Corticospinal (Descending)</div>
+                <div><span class="dot green"></span>Dorsal Columns (Ascending)</div>
+                <div><span class="dot yellow"></span>Ventral Root (Motor Output)</div>
+            </div>
+
+            <div class="container">
+                <div class="view-box">
+                    <h3>Longitudinal View</h3>
+                    <div class="spinal-column">
+                        <div class="segment-line" style="top: 40px;"></div>
+                        <div class="segment-line" style="top: 120px;"></div>
+                        <div class="segment-line" style="top: 200px;"></div>
+                        <div class="segment-line" style="top: 280px;"></div>
+                        <div class="segment-line" style="top: 360px;"></div>
+
+                        <div class="signal-lateral lateral-left"></div>
+                        <div class="signal-lateral lateral-right"></div>
+                        <div class="signal-lateral lateral-left" style="animation-delay: 1s;"></div>
+                        <div class="signal-lateral lateral-right" style="animation-delay: 1.5s;"></div>
+
+                        <div class="signal-posterior green-tract"></div>
+                        <div class="signal-posterior green-tract" style="animation-delay: 1.25s;"></div>
+
+                        <div class="nerve-root exit-1"></div>
+                        <div class="nerve-root exit-1r"></div>
+                        <div class="nerve-root exit-2"></div>
+                        <div class="nerve-root exit-2r"></div>
+                        <div class="nerve-root exit-3"></div>
+                        <div class="nerve-root exit-3r"></div>
+                        <div class="nerve-root exit-4"></div>
+                        <div class="nerve-root exit-4r"></div>
+                        <div class="nerve-root exit-5"></div>
+                        <div class="nerve-root exit-5r"></div>
+                    </div>
+                </div>
+
+                <div class="view-box">
+                    <h3>Cross-Section (Axial)</h3>
+                    <div class="cross-section">
+                        <div class="septum"></div>
+                        <div class="fissure"></div>
+
+                        <svg class="grey-matter-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="1.5" fill="#111" />
+                            <path d="M 48 50 Q 45 60 40 65 L 15 85 Q 10 92 20 92 L 30 85 Q 40 75 45 65 Q 50 60 55 65 Q 60 75 70 85 L 80 92 Q 90 92 85 85 L 60 65 Q 55 60 52 50 Q 55 40 65 25 L 75 8 Q 78 2 72 2 L 65 15 Q 55 30 50 40 Q 45 30 35 15 L 28 2 Q 22 2 25 8 L 35 25 Q 45 40 48 50 Z" 
+                            fill="#555" stroke="#333" stroke-width="1" />
+                        </svg>
+
+                        <div class="cs-posterior green-tract"></div>
+                        <div class="cs-lateral-left"></div>
+                        <div class="cs-lateral-right"></div>
+                        <div class="cs-exit-root"></div>
+                        <div class="cs-exit-root-r"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-column">
+            <div class="clinical-box">
+                <h3>Pathology & Lesion Effects</h3>
+                <ul>
+                    <li>
+                        <span class="highlight">Corticospinal Tract Lesion:</span><br>
+                        A lesion of the corticospinal tract would result in <strong>loss of motor function entirely below the cross-sectional area</strong>. This typically presents as spastic paralysis (Upper Motor Neuron signs).
+                    </li>
+                    <li>
+                        <span class="highlight">Transverse Myelitis:</span><br>
+                        A lesion of the <strong>entire cross-section</strong> would also result in <strong>total paralysis below the cross-section</strong>, involving both motor and sensory pathways bilaterally.
+                    </li>
+                    <li>
+                        <span class="highlight">Anterior Horn Lesion:</span><br>
+                        If only the anterior horn is lesioned, only that <strong>nerve root loses motor function</strong> on that side. Crucially, the <strong>corticospinal tract remains undamaged</strong> in this example; thus, descending signals bypass the segmental lesion and <strong>continue travelling to the lower spinal cord</strong>, preserving distal motor function.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let afferentOn = true;
+
+        function toggleAfferent() {
+            afferentOn = !afferentOn;
+            const greenSignals = document.querySelectorAll('.green-tract');
+            const btn = document.getElementById('toggleGreen');
+
+            greenSignals.forEach(signal => {
+                if (afferentOn) {
+                    signal.classList.remove('signal-off');
+                } else {
+                    signal.classList.add('signal-off');
+                }
+            });
+
+            if (afferentOn) {
+                btn.innerText = "Afferent Signal: ON";
+                btn.className = "active";
+            } else {
+                btn.innerText = "Afferent Signal: OFF";
+                btn.className = "inactive";
+            }
+        }
+    </script>
+</body>
+</html>
